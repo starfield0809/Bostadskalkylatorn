@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- SEO: title + description + Open Graph + Twitter + robots -->
+  <title>Bostadsplaneraren – Räkna kontantinsats, bolån och månadskostnad (Sverige)</title>
+  <meta name="description" content="Gratis bostadskalkylator för Sverige. Räkna kontantinsats, belåningsgrad, bolån, ränta, amortering och månadskostnad. Spara scenarier och öppna Hemnet-sökning.">
+  <meta name="robots" content="index,follow">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="sv_SE">
+  <meta property="og:title" content="Bostadsplaneraren – Räkna kontantinsats, bolån och månadskostnad">
+  <meta property="og:description" content="Räkna på kontantinsats, LTV, bolån och månadskostnad. Spara dina scenarier och få Hemnet-länkar.">
+  <meta property="og:image" content="https://opengraph.githubassets.com/1/bostadsplaneraren/preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Bostadsplaneraren – bostadskalkylator (SE)">
+  <meta name="twitter:description" content="Räkna kontantinsats, lån och månadskostnad. Spara scenarier.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🏠%3C/text%3E%3C/svg%3E">
+  <!-- Analytics: Plausible.io (byt 'data-domain' till din GitHub Pages-domän, t.ex. dittnamn.github.io) -->
+  <script defer data-domain="REPLACE_WITH_YOUR_GITHUB_PAGES_DOMAIN" src="https://plausible.io/js/script.js"></script>
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --card: #f9fafb;
+      --muted: #6b7280;
+      --text: #111827;
+      --accent: #2563eb;
+      --accent-2: #16a34a;
+      --border: #d1d5db;
+      --danger: #dc2626;
+      --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    a { color: #2563eb; }
+    .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    h1 { font-size: 28px; margin: 0 0 6px; font-weight: 700; }
+    .subtitle { color: var(--muted); margin-bottom: 18px; }
+    .row { display: grid; gap: 16px; }
+    @media (min-width: 900px) {
+      .row.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+    .card h3 { margin: 0 0 8px; font-size: 15px; font-weight: 600; display:flex; align-items:center; gap:8px; }
+    label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    input[type="text"], input[type="number"], input[type="date"], select {
+      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+      background: #ffffff; color: var(--text); font-size: 14px; outline: none;
+    }
+    input[type="range"]{ width:100%; }
+    .btn { appearance: none; border:1px solid var(--border); background:#e5e7eb; color:var(--text);
+      padding:10px 14px; border-radius:12px; font-weight:600; cursor:pointer; }
+    .btn:hover { background:#e2e8f0; }
+    .btn.primary { background: var(--accent); border-color: transparent; color:#fff; }
+    .btn.secondary { background:#eef2ff; color:#1e3a8a; border-color:#c7d2fe; }
+    .btn.small { padding:8px 10px; font-size: 12px; }
+    .inline { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .value-xl { font-size: 22px; font-weight: 700; }
+    .grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .sc-list { display:grid; gap:10px; }
+    .sc-item { border:1px solid var(--border); border-radius:12px; padding:10px; display:flex; justify-content:space-between; align-items:center; background:#fff; }
+    .kpi { font-size: 12px; color:var(--muted) }
+    .kpi strong { color: var(--text); }
+    .tabs { display:flex; gap:8px; margin-bottom: 10px; }
+    .tab { padding: 10px 12px; border-radius: 12px; border:1px solid var(--border); background:#e5e7eb; cursor:pointer; font-weight:600; }
+    .tab.active { background: var(--accent); border-color: transparent; color:#fff; }
+    .tag { font-size:12px; padding:4px 8px; border-radius:8px; }
+    .tag.green{ background: #dcfce7; color:#166534; }
+    .tag.yellow{ background: #fef9c3; color:#92400e; }
+    .tag.red{ background: #fee2e2; color:#991b1b; }
+    .spacer{ height: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="inline" style="justify-content: space-between;">
+      <div>
+        <h1>Bostadsplaneraren</h1>
+        <div class="subtitle">Planera kontantinsats, lån och månadskostnad – och spara dina beräkningar.</div>
+      </div>
+      <div class="inline">
+        <button class="btn primary" id="saveScenarioBtn">Spara scenario</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-mode="date">Köp vid datum</div>
+      <div class="tab" data-mode="monthly">När kan jag köpa?</div>
+    </div>
+
+    <div class="row cols-3">
+      <div class="card">
+        <h3>Grunddata</h3>
+        <label>Köpeskilling (kr)</label>
+        <input type="text" id="price" value="5 000 000" />
+        <div id="dateBlock">
+          <div class="spacer"></div>
+          <label>Måldatum</label>
+          <input type="date" id="targetDate"/>
+        </div>
+        <div id="monthlyBlock" style="display:none">
+          <div class="spacer"></div>
+          <label>Månadsspar (kr/mån)</label>
+          <input type="text" id="monthlySaving" value="10 000" />
+        </div>
+        <div class="spacer"></div>
+        <label>Nuvarande kontantinsats (kr)</label>
+        <input type="text" id="currentSavings" value="400 000"/>
+        <div class="spacer"></div>
+        <label>Antagen avkastning på sparande (%/år) <span class="muted">(valfritt)</span></label>
+        <input type="number" step="0.1" id="savingsAPR" value="0"/>
+      </div>
+
+      <div class="card">
+        <h3>Lån & regler</h3>
+        <label>Belåningsgrad (LTV) – hur stor del av priset du lånar</label>
+        <div class="muted">LTV styr minsta kontantinsats: <b id="minDownPctLbl">15</b>% av priset måste du betala kontant.</div>
+        <input type="range" id="ltv" min="50" max="95" step="1" value="85"/>
+        <div class="spacer"></div>
+        <label>Bolåneränta (%/år)</label>
+        <input type="number" step="0.1" id="loanAPR" value="4.5"/>
+        <div class="spacer"></div>
+        <label>Amortering (% av lånet/år)</label>
+        <input type="number" step="0.1" id="amortPct" value="2"/>
+        <div class="spacer"></div>
+        <label>Uppskattad månadsavgift (kr/mån)</label>
+        <input type="text" id="monthlyFee" value="0"/>
+      </div>
+
+      <div class="card">
+        <h3>Inkomst (Bruttolön)</h3>
+        <div class="inline">
+          <button class="btn small secondary" id="modeFixed">Fast lön</button>
+          <button class="btn small" id="modeHourly">Timlön</button>
+        </div>
+        <div id="fixedFields">
+          <div class="spacer"></div>
+          <label>Bruttolön kr/mån</label>
+          <input type="text" id="grossMonthly" value="45 000"/>
+        </div>
+        <div id="hourlyFields" style="display:none">
+          <div class="grid-2">
+            <div>
+              <label>Timlön (kr/h)</label>
+              <input type="text" id="hourlyRate" value="220"/>
+            </div>
+            <div>
+              <label>Timmar/vecka</label>
+              <input type="number" id="hoursPerWeek" value="38"/>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <label>Veckor/år</label>
+          <input type="number" id="weeksPerYear" value="52"/>
+        </div>
+        <div class="spacer"></div>
+        <label>Skuldkvotsmultiplikator (indikativ) – fast 4,5× årslön</label>
+        <div class="muted" id="incomeSummary">–</div>
+        <div class="spacer"></div>
+        <label>Område (för Hemnet-länk)</label>
+        <input type="text" id="city" placeholder="t.ex. Stockholm" value="Stockholm"/>
+        <div class="spacer"></div>
+        <button class="btn secondary" id="resetExample">Återställ exempel</button>
+      </div>
+    </div>
+
+    <div class="row cols-3" style="margin-top:14px;">
+      <div class="card">
+        <h3>Kontantinsats & lån</h3>
+        <div class="muted">Minsta kontantinsats <b id="minDownPctOut">15</b>%</div>
+        <div class="value-xl" id="totalCashNeeded">–</div>
+        <div class="kpi">Varav kontantinsats: <strong id="downPayment">–</strong></div>
+        <div class="kpi">Beräknat lån (LTV <span id="ltvOut">85</span>%): <strong id="loanPrincipal">–</strong></div>
+      </div>
+      <div class="card">
+        <h3>Månadskostnad (ränta + amort + avgift)</h3>
+        <div class="value-xl" id="monthlyHousingCost">–</div>
+        <div class="kpi">Ränta: <strong id="monthlyInterest">–</strong> • Amortering: <strong id="monthlyAmort">–</strong> • Avgift: <strong id="monthlyFeeOut">–</strong></div>
+        <div id="affTag" class="tag" style="display:inline-block; margin-top:8px;">–</div>
+        <div class="muted" style="margin-top:8px;" id="incomeCapHint">–</div>
+      </div>
+      <div class="card">
+        <h3>Scenarioresultat</h3>
+        <div id="resultBox">–</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3>Marknadsexempel</h3>
+      <div class="muted">Öppna en filtrerad sökning på Hemnet med din budget.</div>
+      <div class="inline" style="margin-top:8px;">
+        <a id="hemnetAny" href="#" target="_blank" class="btn small">Hemnet – prisintervall</a>
+        <a id="hemnetCity" href="#" target="_blank" class="btn small">Hemnet – område + interval</a>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3>Sparade scenarier</h3>
+      <div id="scList" class="sc-list"></div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3>Antaganden & tips</h3>
+      <ul class="muted">
+        <li><b>Belåningsgrad (LTV)</b> styr minsta kontantinsats: (1 − LTV) × pris.</li>
+        <li><b>Maxlån vs bruttolön</b> är indikativt (årsbrutto × 4,5). Verkliga lånelöften avgörs av bankens KALP/skuldkvot.</li>
+        <li>Månadskostnad = ränta + amort + avgift (exkl. drift – kan läggas in i nästa iteration).</li>
+        <li>Avkastning på sparande är valfri; sätt 0 % för försiktig beräkning.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Helpers
+    function parseSE(input) {
+      if (typeof input === 'number') return input;
+      const s = String(input).replace(/[^0-9-]/g, '');
+      if (!s) return 0;
+      return Number(s);
+    }
+    function fmt(n) { return Number(n || 0).toLocaleString('sv-SE', { maximumFractionDigits: 0 }); }
+    function fmt2(n) { return Number(n || 0).toLocaleString('sv-SE', { maximumFractionDigits: 2, minimumFractionDigits: 2 }); }
+    function monthsUntil(dateStr){
+      const today = new Date();
+      const tgt = new Date(dateStr);
+      const months = (tgt.getFullYear()-today.getFullYear())*12 + (tgt.getMonth()-today.getMonth());
+      return Math.max(0, months + (tgt.getDate() >= today.getDate() ? 1 : 0));
+    }
+    function requiredMonthly(target, current, i, n){
+      const missing = Math.max(target - current*Math.pow(1+i, n), 0);
+      if (n <= 0) return 0;
+      if (Math.abs(i) < 1e-9) return missing / n;
+      return missing * i / (Math.pow(1+i, n) - 1);
+    }
+    function monthsToTarget(target, current, monthly, i){
+      if (monthly <= 0 && current >= target) return 0;
+      if (monthly <= 0 && current < target) return Infinity;
+      if (Math.abs(i) < 1e-9){
+        const missing = Math.max(target - current, 0);
+        return Math.ceil(missing / monthly);
+      }
+      const A = 1+i;
+      const numerator = target + monthly/i;
+      const denominator = Math.max(current + monthly/i, 1e-9);
+      const x = numerator/denominator;
+      if (x <= 1) return 0;
+      const n = Math.log(x) / Math.log(A);
+      if (!isFinite(n) || n < 0) return 0;
+      return Math.ceil(n);
+    }
+
+    // Tabs
+    const tabs = document.querySelectorAll('.tab');
+    let mode = 'date';
+    tabs.forEach(t => {
+      t.addEventListener('click', () => {
+        tabs.forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        mode = t.dataset.mode;
+        document.getElementById('dateBlock').style.display = (mode==='date') ? '' : 'none';
+        document.getElementById('monthlyBlock').style.display = (mode==='monthly') ? '' : 'none';
+        render();
+      });
+    });
+
+    // Default date -> 31 Dec this year
+    (function setDefaultDate(){
+      const d = new Date(); d.setMonth(11); d.setDate(31);
+      const iso = d.toISOString().slice(0,10);
+      document.getElementById('targetDate').value = iso;
+    })();
+
+    // Salary mode
+    const modeFixedBtn = document.getElementById('modeFixed');
+    const modeHourlyBtn = document.getElementById('modeHourly');
+    let salaryType = 'fixed';
+    modeFixedBtn.addEventListener('click', () => {
+      salaryType = 'fixed';
+      modeFixedBtn.classList.add('secondary'); modeHourlyBtn.classList.remove('secondary');
+      document.getElementById('fixedFields').style.display = '';
+      document.getElementById('hourlyFields').style.display = 'none';
+      render();
+    });
+    modeHourlyBtn.addEventListener('click', () => {
+      salaryType = 'hourly';
+      modeHourlyBtn.classList.add('secondary'); modeFixedBtn.classList.remove('secondary');
+      document.getElementById('fixedFields').style.display = 'none';
+      document.getElementById('hourlyFields').style.display = '';
+      render();
+    });
+
+    // Money inputs: format on blur
+    function wireMoneyInput(id){
+      const el = document.getElementById(id);
+      el.addEventListener('blur', ()=>{ el.value = fmt(parseSE(el.value)); render(); });
+    }
+    ['price','monthlySaving','currentSavings','grossMonthly','hourlyRate','monthlyFee'].forEach(wireMoneyInput);
+
+    // Other inputs: rerender on change
+    ['targetDate','savingsAPR','ltv','loanAPR','amortPct','hoursPerWeek','weeksPerYear','city','monthlyFee'].forEach(id => {
+      document.getElementById(id).addEventListener('input', render);
+    });
+
+    document.getElementById('resetExample').addEventListener('click', () => {
+      document.getElementById('price').value = fmt(5000000);
+      const d = new Date(); d.setMonth(11); d.setDate(31);
+      document.getElementById('targetDate').value = d.toISOString().slice(0,10);
+      document.getElementById('monthlySaving').value = fmt(10000);
+      document.getElementById('currentSavings').value = fmt(400000);
+      document.getElementById('savingsAPR').value = 0;
+      document.getElementById('ltv').value = 85;
+      document.getElementById('loanAPR').value = 4.5;
+      document.getElementById('amortPct').value = 2;
+      document.getElementById('monthlyFee').value = fmt(0);
+      salaryType = 'fixed';
+      document.getElementById('grossMonthly').value = fmt(45000);
+      document.getElementById('hourlyRate').value = fmt(220);
+      document.getElementById('hoursPerWeek').value = 38;
+      document.getElementById('weeksPerYear').value = 52;
+      document.getElementById('city').value = 'Stockholm';
+      render();
+    });
+
+    function hemnetUrl(maxPrice, area){
+      const base = 'https://www.hemnet.se/bostader';
+      const maxP = Math.round(maxPrice);
+      const minP = Math.round(maxP * 0.9);
+      const params = new URLSearchParams();
+      params.set('price_min', String(minP));
+      params.set('price_max', String(maxP));
+      if (area) params.set('location_ids', area);
+      return base + '?' + params.toString();
+    }
+
+    // Scenario storage
+    function getSnapshot(){
+      return {
+        mode,
+        price: parseSE(price.value),
+        targetDate: targetDate.value,
+        monthlySaving: parseSE(monthlySaving.value),
+        currentSavings: parseSE(currentSavings.value),
+        savingsAPR: Number(savingsAPR.value),
+        ltv: Number(ltv.value),
+        loanAPR: Number(loanAPR.value),
+        amortPct: Number(amortPct.value),
+        monthlyFee: parseSE(monthlyFee.value),
+        salaryType,
+        grossMonthly: parseSE(grossMonthly.value),
+        hourlyRate: parseSE(hourlyRate.value),
+        hoursPerWeek: Number(hoursPerWeek.value),
+        weeksPerYear: Number(weeksPerYear.value),
+        city: city.value
+      };
+    }
+    function loadSnapshot(s){
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      document.querySelector(`.tab[data-mode="${s.mode}"]`).classList.add('active');
+      mode = s.mode;
+      document.getElementById('dateBlock').style.display = (mode==='date') ? '' : 'none';
+      document.getElementById('monthlyBlock').style.display = (mode==='monthly') ? '' : 'none';
+
+      price.value = fmt(s.price);
+      targetDate.value = s.targetDate;
+      monthlySaving.value = fmt(s.monthlySaving);
+      currentSavings.value = fmt(s.currentSavings);
+      savingsAPR.value = s.savingsAPR;
+      ltv.value = s.ltv;
+      loanAPR.value = s.loanAPR;
+      amortPct.value = s.amortPct;
+      monthlyFee.value = fmt(s.monthlyFee || 0);
+
+      salaryType = s.salaryType;
+      if (salaryType === 'fixed') { modeFixedBtn.click(); } else { modeHourlyBtn.click(); }
+      grossMonthly.value = fmt(s.grossMonthly);
+      hourlyRate.value = fmt(s.hourlyRate);
+      hoursPerWeek.value = s.hoursPerWeek;
+      weeksPerYear.value = s.weeksPerYear;
+      city.value = s.city;
+      render();
+    }
+    function saveScenario(){
+      try {
+        const list = JSON.parse(localStorage.getItem('bostadsplaneraren.scenarios') || '[]');
+        const id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
+        const snap = getSnapshot();
+        const name = 'Scenario ' + (list.length + 1);
+        list.unshift({ id, name, createdAt: Date.now(), ...snap });
+        localStorage.setItem('bostadsplaneraren.scenarios', JSON.stringify(list));
+        renderScenarioList();
+      } catch (e) {
+        alert('Kunde inte spara scenario. Kontrollera webbläsarens inställningar för localStorage.');
+        console.error(e);
+      }
+    }
+    function duplicateScenarioById(id){
+      const list = JSON.parse(localStorage.getItem('bostadsplaneraren.scenarios') || '[]');
+      const s = list.find(x => x.id === id);
+      if (!s) return;
+      const copy = { ...s, id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()), name: s.name + ' (kopia)', createdAt: Date.now() };
+      list.unshift(copy);
+      localStorage.setItem('bostadsplaneraren.scenarios', JSON.stringify(list));
+      renderScenarioList();
+    }
+    function deleteScenarioById(id){
+      let list = JSON.parse(localStorage.getItem('bostadsplaneraren.scenarios') || '[]');
+      list = list.filter(x => x.id !== id);
+      localStorage.setItem('bostadsplaneraren.scenarios', JSON.stringify(list));
+      renderScenarioList();
+    }
+    function renderScenarioList(){
+      const host = document.getElementById('scList');
+      let list = [];
+      try { list = JSON.parse(localStorage.getItem('bostadsplaneraren.scenarios') || '[]'); } catch { list = []; }
+      host.innerHTML = '';
+      if (!list.length){
+        host.innerHTML = '<div class="muted">Inga sparade ännu. Klicka “Spara scenario”.</div>';
+        return;
+      }
+      list.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'sc-item';
+        const left = document.createElement('div');
+        left.innerHTML = '<div style="font-weight:600">'+s.name+'</div>' +
+          '<div class="muted">Pris '+fmt(s.price)+' • LTV '+s.ltv+'% • Ränta '+s.loanAPR+'% • Brutto '+ (s.salaryType==='fixed' ? fmt(s.grossMonthly) : fmt(Math.round(s.hourlyRate*s.hoursPerWeek*s.weeksPerYear/12))) +'/mån</div>';
+        const right = document.createElement('div');
+        right.className = 'inline';
+        const loadBtn = document.createElement('button'); loadBtn.className='btn small'; loadBtn.textContent='Ladda';
+        const dupBtn = document.createElement('button'); dupBtn.className='btn small'; dupBtn.textContent='Duplicera';
+        const delBtn = document.createElement('button'); delBtn.className='btn small'; delBtn.textContent='Ta bort';
+        loadBtn.onclick = () => loadSnapshot(s);
+        dupBtn.onclick = () => duplicateScenarioById(s.id);
+        delBtn.onclick = () => deleteScenarioById(s.id);
+        right.appendChild(loadBtn); right.appendChild(dupBtn); right.appendChild(delBtn);
+        div.appendChild(left); div.appendChild(right);
+        host.appendChild(div);
+      });
+    }
+    document.getElementById('saveScenarioBtn').addEventListener('click', saveScenario);
+
+    function render(){
+      const priceV = parseSE(price.value);
+      const ltvV = Number(ltv.value);
+      const minDownPct = 100 - ltvV;
+      document.getElementById('minDownPctLbl').textContent = String(minDownPct);
+      document.getElementById('minDownPctOut').textContent = String(minDownPct);
+      document.getElementById('ltvOut').textContent = String(ltvV);
+
+      const downPayment = Math.round(priceV * (minDownPct/100));
+      const totalCash = downPayment; // no buffer
+      document.getElementById('downPayment').textContent = fmt(downPayment) + ' kr';
+      document.getElementById('totalCashNeeded').textContent = fmt(totalCash) + ' kr';
+
+      const loanPrincipal = Math.max(0, priceV - downPayment);
+      document.getElementById('loanPrincipal').textContent = fmt(loanPrincipal) + ' kr';
+
+      const loanAPRv = Number(loanAPR.value);
+      const amortPctv = Number(amortPct.value);
+      const monthlyInterest = Math.round(loanPrincipal * (loanAPRv/100) / 12);
+      const monthlyAmort = Math.round(loanPrincipal * (amortPctv/100) / 12);
+      const monthlyFeeV = parseSE(monthlyFee.value);
+      const monthlyHousingCost = monthlyInterest + monthlyAmort + monthlyFeeV;
+      document.getElementById('monthlyInterest').textContent = fmt(monthlyInterest);
+      document.getElementById('monthlyAmort').textContent = fmt(monthlyAmort);
+      document.getElementById('monthlyFeeOut').textContent = fmt(monthlyFeeV);
+      document.getElementById('monthlyHousingCost').textContent = fmt(monthlyHousingCost) + ' kr/mån';
+
+      // Income
+      let effectiveGrossMonthly = 0;
+      if (salaryType === 'fixed') {
+        effectiveGrossMonthly = parseSE(grossMonthly.value);
+      } else {
+        const hr = parseSE(hourlyRate.value);
+        const hpw = Number(hoursPerWeek.value);
+        const wpy = Number(weeksPerYear.value);
+        effectiveGrossMonthly = Math.round(hr*hpw*wpy/12);
+      }
+      const grossAnnual = effectiveGrossMonthly * 12;
+      const mult = 4.5; // fast multiplikator
+      const indicativeMaxLoan = Math.max(0, Math.round(grossAnnual * mult));
+
+      // Affordability tag vs gross monthly
+      const ratio = effectiveGrossMonthly>0 ? monthlyHousingCost / effectiveGrossMonthly : 0;
+      const tag = document.getElementById('affTag');
+      if (effectiveGrossMonthly <= 0) { tag.style.display='none'; }
+      else {
+        tag.style.display='inline-block';
+        if (ratio < 0.2){ tag.className='tag green'; tag.textContent='Belastning: låg ('+fmt2(ratio*100)+'%)'; }
+        else if (ratio < 0.3){ tag.className='tag green'; tag.textContent='Belastning: måttlig ('+fmt2(ratio*100)+'%)'; }
+        else if (ratio < 0.4){ tag.className='tag yellow'; tag.textContent='Belastning: hög ('+fmt2(ratio*100)+'%)'; }
+        else { tag.className='tag red'; tag.textContent='Belastning: mycket hög ('+fmt2(ratio*100)+'%)'; }
+      }
+
+      const ltvIfIncomeCap = priceV>0 ? Math.round((Math.min(loanPrincipal, indicativeMaxLoan)/priceV)*100) : 0;
+      document.getElementById('incomeSummary').textContent =
+        'Bruttolön '+fmt(effectiveGrossMonthly)+' kr/mån ⇒ årsinkomst '+fmt(grossAnnual)+' ⇒ indikativt maxlån ≈ '+fmt(indicativeMaxLoan)+' kr (4,5× årslön).';
+      document.getElementById('incomeCapHint').textContent =
+        `Indikativt maxlån enligt din bruttolön: ${fmt(indicativeMaxLoan)} kr (4,5×). ` +
+        `Det motsvarar ca ${ltvIfIncomeCap}% LTV på ditt pris.`;
+
+      // Result box
+      const savingsAPRv = Number(savingsAPR.value);
+      const iSave = (savingsAPRv/100)/12;
+      const currentSavingsV = parseSE(currentSavings.value);
+
+      const res = document.getElementById('resultBox');
+      if (mode === 'date'){
+        const m = monthsUntil(targetDate.value);
+        const target = totalCash;
+        const req = requiredMonthly(target, currentSavingsV, iSave, m);
+        res.innerHTML = `<div class="muted">Månader till mål: ${m}</div>
+                         <div class="value-xl">Spara ${fmt(Math.ceil(req))} kr/mån</div>
+                         <div class="muted">Antagen avkastning: ${savingsAPRv}% p.a.</div>`;
+      } else {
+        const mSave = parseSE(monthlySaving.value);
+        const target = totalCash;
+        const mNeeded = monthsToTarget(target, currentSavingsV, mSave, iSave);
+        if (isFinite(mNeeded)){
+          const d = new Date();
+          d.setMonth(d.getMonth() + mNeeded);
+          const iso = d.toISOString().slice(0,10);
+          res.innerHTML = `<div class="muted">Med ${fmt(mSave)} kr/mån</div>
+                           <div class="value-xl">Mål nås om ${mNeeded} månader</div>
+                           <div class="muted">≈ ${iso}</div>
+                           <div class="muted">Antagen avkastning: ${savingsAPRv}% p.a.</div>`;
+        } else {
+          res.innerHTML = `<div class="value-xl" style="color:var(--danger)">Målet nås inte</div>`;
+        }
+      }
+
+      // Hemnet links with price_min = 90% of price
+      const any = document.getElementById('hemnetAny');
+      any.textContent = 'Hemnet – prisintervall ' + fmt(Math.round(priceV * 0.9)) + '–' + fmt(priceV) + ' kr';
+      any.href = hemnetUrl(priceV, '');
+      const cityA = document.getElementById('hemnetCity');
+      cityA.textContent = 'Hemnet – ' + (city.value || 'område') + ' (' + fmt(Math.round(priceV * 0.9)) + '–' + fmt(priceV) + ' kr)';
+      cityA.href = hemnetUrl(priceV, city.value);
+    }
+
+    function initFormatting(){
+      ['price','monthlySaving','currentSavings','grossMonthly','hourlyRate','monthlyFee'].forEach(id => {
+        const el = document.getElementById(id);
+        el.value = fmt(parseSE(el.value));
+      });
+    }
+
+    // Initial render
+    initFormatting();
+    renderScenarioList();
+    render();
+  </script>
+</body>
+</html>

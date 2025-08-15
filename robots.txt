@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://starfield0809.github.io/Bostadskalkylatorn/sitemap.xml
